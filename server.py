@@ -6,8 +6,13 @@ import requests
 
 app = Flask(__name__)
 
+# Debug: In ra giá trị của BOT_TOKEN
+print(f"BOT_TOKEN from environment: {os.getenv('BOT_TOKEN')}")
+
 # Cấu hình bot Telegram
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN is not set in environment variables!")
 application = Application.builder().token(BOT_TOKEN).build()
 
 # Danh sách vùng hỗ trợ
