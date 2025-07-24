@@ -2,7 +2,6 @@ import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 import requests
-import os
 
 # Cấu hình logging
 logging.basicConfig(
@@ -22,6 +21,7 @@ CHANGE_BIO_URL = "https://change-bio-api-lkteam.onrender.com/changebio"
 CHANGE_NICKNAME_URL = "https://nickname-change-lkteam-dbww.onrender.com/change_nickname"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Gửi tin nhắn chào mừng khi dùng lệnh /start."""
     welcome_message = (
         "Chào bạn! Đây là bot Telegram sử dụng Free Fire API từ PRINCE-LKTEAM.\n"
         "Danh sách lệnh:\n"
@@ -37,6 +37,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(welcome_message)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Hiển thị hướng dẫn sử dụng lệnh."""
     help_text = (
         "Danh sách lệnh:\n"
         "/playerinfo <uid> <region> - Lấy thông tin người chơi (VD: /playerinfo 12345678 SG)\n"
@@ -50,17 +51,21 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text(help_text)
 
 async def player_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Lấy thông tin người chơi theo UID và vùng."""
     if len(context.args) != 2:
         await update.message.reply_text("Vui lòng cung cấp UID và vùng. VD: /playerinfo 12345678 SG")
         return
+
     uid, region = context.args
     if region.upper() not in SUPPORTED_REGIONS:
         await update.message.reply_text(f"Vùng không được hỗ trợ. Vùng hợp lệ: {', '.join(SUPPORTED_REGIONS)}")
         return
+
     try:
-        response = requests.get(f"{PLAYER_INFO_URL}?uid={uid}®ion={region}")
+        response = requests.get(f"{PLAYER_INFO_URL}?uid={uid}&region={region}")
         response.raise_for_status()
         data = response.json()
+        
         basic_info = data.get("basicInfo", {})
         reply = (
             f"Thông tin người chơi:\n"
@@ -75,14 +80,17 @@ async def player_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
 async def ban_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Kiểm tra trạng thái cấm theo UID."""
     if len(context.args) != 1:
         await update.message.reply_text("Vui lòng cung cấp UID. VD: /bancheck 12345678")
         return
+
     uid = context.args[0]
     try:
         response = requests.get(f"{BAN_CHECK_URL}?uid={uid}")
         response.raise_for_status()
         data = response.json()
+        
         reply = (
             f"Kiểm tra cấm:\n"
             f"UID: {data.get('uid', 'N/A')}\n"
@@ -96,20 +104,24 @@ async def ban_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
 async def search_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Tìm kiếm người chơi theo biệt danh."""
     if len(context.args) < 1:
         await update.message.reply_text("Vui lòng cung cấp biệt danh. VD: /searchnickname xLK-TEAM-1")
         return
+
     nickname = " ".join(context.args)
     try:
         response = requests.get(f"{SEARCH_NICKNAME_URL}?name={nickname}")
         response.raise_for_status()
         data = response.json()
+        
         results = data.get("result", [])
         if not results:
             await update.message.reply_text("Không tìm thấy người chơi nào.")
             return
+
         reply = "Kết quả tìm kiếm:\n"
-        for player in results[:5]:
+        for player in results[:5]:  # Giới hạn 5 kết quả để tránh spam
             reply += (
                 f"Tên: {player.get('nickname', 'N/A')}\n"
                 f"UID: {player.get('account_id', 'N/A')}\n"
@@ -121,20 +133,25 @@ async def search_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
 async def add_likes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Thêm lượt thích cho người chơi."""
     if len(context.args) != 3:
         await update.message.reply_text("Vui lòng cung cấp UID, vùng và số lượt thích. VD: /addlikes 9067719977 US 100")
         return
+
     uid, region, count = context.args
     if region.upper() not in SUPPORTED_REGIONS:
         await update.message.reply_text(f"Vùng không được hỗ trợ. Vùng hợp lệ: {', '.join(SUPPORTED_REGIONS)}")
         return
+
     try:
         count = int(count)
         if count <= 0:
             raise ValueError("Số lượt thích phải lớn hơn 0")
-        response = requests.get(f"{LIKES_URL}?uid={uid}®ion={region}&count={count}")
+        
+        response = requests.get(f"{LIKES_URL}?uid={uid}&region={region}&count={count}")
         response.raise_for_status()
         data = response.json()
+        
         reply = (
             f"Kết quả thêm lượt thích:\n"
             f"Tên: {data.get('name', 'N/A')}\n"
@@ -152,34 +169,43 @@ async def add_likes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
 async def change_bio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Thay đổi bio của người chơi."""
     if len(context.args) < 4:
         await update.message.reply_text("Vui lòng cung cấp UID, mật khẩu, bio mới và vùng. VD: /changebio 123 pass [FF0000]LK[00FF00]TEAM SG")
         return
+
     uid, password = context.args[0], context.args[1]
     newbio = " ".join(context.args[2:-1])
     region = context.args[-1]
+    
     if region.upper() not in SUPPORTED_REGIONS:
         await update.message.reply_text(f"Vùng không được hỗ trợ. Vùng hợp lệ: {', '.join(SUPPORTED_REGIONS)}")
         return
+
     try:
-        response = requests.get(f"{CHANGE_BIO_URL}?uid={uid}&password={password}&newbio={newbio}®ion={region}")
+        response = requests.get(f"{CHANGE_BIO_URL}?uid={uid}&password={password}&newbio={newbio}&region={region}")
         response.raise_for_status()
         data = response.json()
+        
         reply = f"Kết quả thay đổi bio:\nTrạng thái: {data.get('status', 'N/A')}\nThông báo: {data.get('message', 'N/A')}"
         await update.message.reply_text(reply)
     except requests.RequestException as e:
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
 async def change_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Thay đổi biệt danh của người chơi."""
     if len(context.args) < 2:
         await update.message.reply_text("Vui lòng cung cấp JWT token và biệt danh mới. VD: /changenickname <jwt_token> LK-HYUN1")
         return
+
     jwt_token = context.args[0]
     newname = " ".join(context.args[1:])
+    
     try:
         response = requests.get(f"{CHANGE_NICKNAME_URL}?jwt={jwt_token}&newname={newname}")
         response.raise_for_status()
         data = response.json()
+        
         reply = (
             f"Kết quả thay đổi biệt danh:\n"
             f"UID: {data.get('account_id', 'N/A')}\n"
@@ -193,7 +219,11 @@ async def change_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
 def main() -> None:
-    application = Application.builder().token(os.getenv("BOT_TOKEN")).build()
+    """Chạy bot."""
+    # Thay 'YOUR_BOT_TOKEN' bằng token từ BotFather
+    application = Application.builder().token("8267772832:AAF9bXBGa-PHYp-jC6XLGlJdIgwzcN-O5nY").build()
+
+    # Thêm các lệnh
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("playerinfo", player_info))
@@ -202,7 +232,9 @@ def main() -> None:
     application.add_handler(CommandHandler("addlikes", add_likes))
     application.add_handler(CommandHandler("changebio", change_bio))
     application.add_handler(CommandHandler("changenickname", change_nickname))
+
+    # Chạy bot
     application.run_polling()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
