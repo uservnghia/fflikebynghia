@@ -204,8 +204,8 @@ async def change_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 def ping():
     return jsonify({"status": "OK"}), 200
 
-# Hàm chạy bot và Flask cùng lúc
-async def main():
+# Hàm chạy bot
+async def run_bot():
     # Thêm handler cho bot
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
@@ -216,18 +216,16 @@ async def main():
     application.add_handler(CommandHandler("changebio", change_bio))
     application.add_handler(CommandHandler("changenickname", change_nickname))
 
-    # Chạy bot trong cùng event loop
+    # Chạy bot polling
     await application.run_polling()
 
 if __name__ == "__main__":
-    # Chạy Flask trong một thread riêng
-    import threading
-    def run_flask():
-        port = int(os.getenv("PORT", 5000))
-        app.run(host='0.0.0.0', port=port)
-
-    flask_thread = threading.Thread(target=run_flask)
+    # Chạy Flask trong main thread
+    port = int(os.getenv("PORT", 5000))
+    flask_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=port))
     flask_thread.start()
 
-    # Chạy bot trong main thread với asyncio
-    asyncio.run(main())
+    # Chạy bot trong event loop riêng
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run_bot())
