@@ -1,3 +1,5 @@
+import telegram.ext
+print(f"telegram-bot version: {telegram.ext.__version__}")
 import os
 import asyncio
 from telegram import Update
@@ -11,6 +13,8 @@ print(f"BOT_TOKEN from environment: {os.getenv('BOT_TOKEN')}")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN is not set in environment variables!")
+
+# Tạo application mà không dùng builder để tránh lỗi
 application = Application.builder().token(BOT_TOKEN).build()
 
 # Danh sách vùng hỗ trợ
@@ -208,7 +212,10 @@ async def run_bot():
     application.add_handler(CommandHandler("changebio", change_bio))
     application.add_handler(CommandHandler("changenickname", change_nickname))
 
-    # Chạy bot polling
+    # Chạy bot polling với cấu hình thủ công
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
     await application.run_polling()
 
 if __name__ == "__main__":
