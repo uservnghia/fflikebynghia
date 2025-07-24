@@ -1,11 +1,8 @@
-from flask import Flask, jsonify
 import os
 import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 import requests
-
-app = Flask(__name__)
 
 # Debug: In ra giá trị của BOT_TOKEN
 print(f"BOT_TOKEN from environment: {os.getenv('BOT_TOKEN')}")
@@ -199,11 +196,6 @@ async def change_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     except requests.RequestException as e:
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
-# Định nghĩa endpoint /ping
-@app.route('/ping', methods=['GET'])
-def ping():
-    return jsonify({"status": "OK"}), 200
-
 # Hàm chạy bot
 async def run_bot():
     # Thêm handler cho bot
@@ -220,12 +212,5 @@ async def run_bot():
     await application.run_polling()
 
 if __name__ == "__main__":
-    # Chạy Flask trong main thread
-    port = int(os.getenv("PORT", 5000))
-    flask_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=port))
-    flask_thread.start()
-
-    # Chạy bot trong event loop riêng
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(run_bot())
+    # Chạy bot trong event loop
+    asyncio.run(run_bot())
