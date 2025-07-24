@@ -1,3 +1,4 @@
+import os
 import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -220,8 +221,12 @@ async def change_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 def main() -> None:
     """Chạy bot."""
-    # Thay 'YOUR_BOT_TOKEN' bằng token từ BotFather
-    application = Application.builder().token("8267772832:AAF9bXBGa-PHYp-jC6XLGlJdIgwzcN-O5nY").build()
+    token = os.environ.get("BOT_TOKEN")
+    if not token:
+        print("Vui lòng thiết lập biến môi trường BOT_TOKEN với token bot Telegram của bạn.")
+        return
+
+    application = Application.builder().token(token).build()
 
     # Thêm các lệnh
     application.add_handler(CommandHandler("start", start))
