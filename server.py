@@ -7,8 +7,8 @@ import requests
 app = Flask(__name__)
 
 # Cấu hình bot Telegram
-BOT_TOKEN = os.getenv("8267772832:AAFpGDib4hjMp-xC6rs2bw4CWt-_Qh2F8lQ")
-application = Application.builder().token(BOT_TOKEN).build()
+BOT_TOKEN = os.getenv("8267772832:AAF9bXBGa-PHYp-jC6XLGlJdIgwzcN-O5nY")
+application = Application.builder().token(8267772832:AAF9bXBGa-PHYp-jC6XLGlJdIgwzcN-O5nY).build()
 
 # Danh sách vùng hỗ trợ
 SUPPORTED_REGIONS = ["ME", "SG", "BD", "TH", "VN", "US", "BR", "SAC", "NA"]
