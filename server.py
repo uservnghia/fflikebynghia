@@ -1,5 +1,3 @@
-import telegram.ext
-print(f"telegram-bot version: {telegram.ext.__version__}")
 import os
 import asyncio
 from telegram import Update
