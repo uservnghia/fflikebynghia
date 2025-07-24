@@ -1,6 +1,6 @@
-from flask import Flask
-import threading
+from flask import Flask, jsonify
 import os
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 import requests
@@ -199,8 +199,14 @@ async def change_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     except requests.RequestException as e:
         await update.message.reply_text(f"Lỗi khi gọi API: {str(e)}")
 
-# Hàm chạy bot trong thread
-def run_bot():
+# Định nghĩa endpoint /ping
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({"status": "OK"}), 200
+
+# Hàm chạy bot và Flask cùng lúc
+async def main():
+    # Thêm handler cho bot
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("playerinfo", player_info))
@@ -209,14 +215,16 @@ def run_bot():
     application.add_handler(CommandHandler("addlikes", add_likes))
     application.add_handler(CommandHandler("changebio", change_bio))
     application.add_handler(CommandHandler("changenickname", change_nickname))
-    application.run_polling()
 
-# Khởi chạy Flask và bot
+    # Chạy bot trong cùng event loop
+    await application.run_polling()
+
 if __name__ == "__main__":
-    # Chạy bot trong thread riêng
-    bot_thread = threading.Thread(target=run_bot)
-    bot_thread.start()
+    # Chạy Flask và bot
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(main())
 
-    # Lấy cổng từ Render (môi trường)
+    # Lấy cổng từ Render
     port = int(os.getenv("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
