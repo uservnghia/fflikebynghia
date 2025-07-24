@@ -220,11 +220,14 @@ async def main():
     await application.run_polling()
 
 if __name__ == "__main__":
-    # Chạy Flask và bot
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
+    # Chạy Flask trong một thread riêng
+    import threading
+    def run_flask():
+        port = int(os.getenv("PORT", 5000))
+        app.run(host='0.0.0.0', port=port)
 
-    # Lấy cổng từ Render
-    port = int(os.getenv("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    # Chạy bot trong main thread với asyncio
+    asyncio.run(main())
