@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: telegram-freefire-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: BOT_TOKEN
+        value: <8267772832:AAF9bXBGa-PHYp-jC6XLGlJdIgwzcN-O5nY>
